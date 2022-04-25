@@ -1,14 +1,17 @@
 template = create_template();
 
-img_path = "img/car_3.png";
+img_path = "img/car_1.png";
 img = imread(img_path);
 figure, imshow(img); title('Original Image');
 
 imgray = rgb2gray(img);
 figure, imshow(imgray); title('1 - Grayscale Conversion');
 
-gray = imbilatfilt(imgray,10);
-%gray = histeq(gray);
+imgray = imbilatfilt(imgray,10);
+imgray = histeq(imgray);
+imgray = imgaussfilt(imgray, 1);
+T = graythresh(imgray);
+imgray = imbinarize(imgray, T);
 figure, imshow(imgray); title('2 - Bilateral Filter');
 
 edged = edge(imgray, 'canny');
@@ -38,8 +41,19 @@ for k = 1:length(cnts)
     plot(boundary(:,2), boundary(:,1), 'g', 'LineWidth', 3);
 end
 
-z = regionprops(edged,'BoundingBox', 'Area');
-disp(size(z));
+stats = regionprops(edged,'Perimeter', 'Area', 'FilledArea', 'Solidity', 'Centroid', 'Circularity', 'BoundingBox');
+b = [stats.Circularity];
+b = b';
+stats = stats(b < 1.4);
+
+count = numel(stats);
+figure, imshow(img);
+hold on
+for i = 1:count
+    rectangle('Position', stats(i).BoundingBox, 'LineWidth', 3, 'EdgeColor', 'g')
+end
+
+
 
 %{
 Iprops = regionprops(im, 'BoundingBox', 'Area', 'Image');
@@ -75,4 +89,3 @@ end
 
 disp('Plate Number = ');
 disp(noPlate);
-%}
